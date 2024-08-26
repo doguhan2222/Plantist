@@ -33,6 +33,8 @@ class _SignupScreenState extends State<SignupScreen> {
         backgroundColor: Colors.white,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios, color: Colors.black),
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
           onPressed: () {
             Get.offAllNamed('/');
           },

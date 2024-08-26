@@ -32,6 +32,8 @@ class _LoginScreenState extends State<LoginScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         leading: IconButton(
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
           icon: Icon(Icons.arrow_back_ios, color: Colors.black),
           onPressed: () {
             Get.offAllNamed('/');
