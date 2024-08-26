@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:plantist/constants/CommonVariables.dart';
 import '../constants/Texts.dart';
 
@@ -29,11 +30,12 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
-        elevation: 0,
         backgroundColor: Colors.white,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios, color: Colors.black),
-          onPressed: () {},
+          onPressed: () {
+            Get.offAllNamed('/');
+          },
         ),
       ),
       body: Padding(

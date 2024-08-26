@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:plantist/constants/CommonVariables.dart';
 
 import '../constants/Texts.dart';
@@ -51,11 +52,11 @@ class SplashScreen extends StatelessWidget {
                   SizedBox(height: CommonVariables.height*0.03),
                   TextButton.icon(
                     onPressed: () {
-
+                      Get.toNamed('/login');
                     },
                     icon: Icon(Icons.email_rounded, color: Colors.black),
                     label: Text(
-                      Texts.SIGN_IN_WITH_EMAIL,
+                      Texts.LOGIN_WITH_EMAIL,
                       style: TextStyle(
                         fontSize: CommonVariables.width * 0.05,
                         color: Colors.black,
@@ -73,7 +74,7 @@ class SplashScreen extends StatelessWidget {
                   SizedBox(height: CommonVariables.height*0.03),
                   TextButton(
                     onPressed: () {
-
+                      Get.toNamed('/signup');
                     },
                     child: RichText(
                       text: TextSpan(
