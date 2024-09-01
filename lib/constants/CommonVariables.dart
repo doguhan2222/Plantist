@@ -1,4 +1,7 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:plantist/constants/Texts.dart';
+
 
 class CommonVariables {
   static double width = 0.0;
@@ -8,6 +11,14 @@ class CommonVariables {
     width = MediaQuery.of(context).size.width;
     height = MediaQuery.of(context).size.height;
   }
+
+  static const Map<String, Color> priorityColors = {
+    Texts.VERYIMPORTANT: Colors.red,
+    Texts.IMPORTANT: Colors.orange,
+    Texts.LESSIMPORTANT: Colors.lightBlueAccent,
+    Texts.NOTIMPORTANT: Colors.grey,
+  };
+
 }
 
 /*

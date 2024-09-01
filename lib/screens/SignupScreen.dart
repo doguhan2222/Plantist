@@ -1,27 +1,30 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:plantist/constants/CommonVariables.dart';
+import '../constants/SignUpStatus.dart';
 import '../constants/Texts.dart';
+import '../viewmodels/SignUpViewModel.dart';
 
 class SignupScreen extends StatefulWidget {
   @override
   _SignupScreenState createState() => _SignupScreenState();
 }
 
+final TextEditingController _emailController = TextEditingController();
+final TextEditingController _passwordController = TextEditingController();
+
 class _SignupScreenState extends State<SignupScreen> {
-  bool _isEmailValid = false;
-  bool _isPasswordValid = false;
+  final RxBool _isEmailValid = false.obs;
+  final RxBool _isPasswordValid = false.obs;
+  final SignUpViewmodel _signUpController = Get.put(SignUpViewmodel());
 
   void _onEmailChanged(bool isValid) {
-    setState(() {
-      _isEmailValid = isValid;
-    });
+    _isEmailValid.value = isValid;
   }
 
   void _onPasswordChanged(bool isValid) {
-    setState(() {
-      _isPasswordValid = isValid;
-    });
+    _isPasswordValid.value = isValid;
   }
 
   @override
@@ -41,10 +44,8 @@ class _SignupScreenState extends State<SignupScreen> {
         ),
       ),
       body: Padding(
-
         padding: EdgeInsets.symmetric(horizontal: CommonVariables.width * 0.05),
         child: Column(
-
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(height: CommonVariables.height * 0.005),
@@ -68,28 +69,48 @@ class _SignupScreenState extends State<SignupScreen> {
             SizedBox(height: CommonVariables.height * 0.02),
             PasswordField(onChanged: _onPasswordChanged),
             SizedBox(height: CommonVariables.height * 0.04),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: (_isEmailValid && _isPasswordValid) ? () {} : null,
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(vertical: CommonVariables.height * 0.03),
-                  backgroundColor: (_isEmailValid && _isPasswordValid)
-                      ? Colors.indigo[900]
-                      : Colors.grey[400],
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24.0),
-                  ),
-                ),
-                child: Text(
-                  Texts.signUpButton,
-                  style: TextStyle(
-                    fontSize: CommonVariables.width * 0.05,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
+            Obx(() {
+              if (_signUpController.status.value == SignUpStatus.loading) {
+                return Center(child: CircularProgressIndicator());
+              } else if (_signUpController.status.value == SignUpStatus.failure) {
+                return Text(
+                  'Error: ${_signUpController.errorMessage.value}',
+                  style: TextStyle(color: Colors.red),
+                );
+              } else {
+                return Obx(() {
+                  return SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: (_isEmailValid.value && _isPasswordValid.value)
+                          ? () {
+                        _signUpController.signUp(
+                          _emailController.text,
+                          _passwordController.text,
+                        );
+                      }
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(vertical: CommonVariables.height * 0.03),
+                        backgroundColor: (_isEmailValid.value && _isPasswordValid.value)
+                            ? Colors.indigo[900]
+                            : Colors.grey[400],
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24.0),
+                        ),
+                      ),
+                      child: Text(
+                        Texts.signUpButton,
+                        style: TextStyle(
+                          fontSize: CommonVariables.width * 0.05,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  );
+                });
+              }
+            }),
             Spacer(),
             Center(
               child: RichText(
@@ -140,7 +161,6 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 }
 
-
 class EmailField extends StatefulWidget {
   final void Function(bool isValid) onChanged;
 
@@ -151,42 +171,42 @@ class EmailField extends StatefulWidget {
 }
 
 class _EmailFieldState extends State<EmailField> {
-  bool _containsAtSymbol = false;
+  final RxBool _containsAtSymbol = false.obs;
 
   void _onChanged(String text) {
     bool isValid = text.contains('@') && text.contains('.');
     widget.onChanged(isValid);
-    setState(() {
-      _containsAtSymbol = isValid;
-    });
+    _containsAtSymbol.value = isValid;
   }
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      keyboardType: TextInputType.emailAddress,
-      onChanged: _onChanged,
-      decoration: InputDecoration(
-        labelText: Texts.emailLabel,
-        labelStyle: TextStyle(color: Colors.grey),
-        border: InputBorder.none, // Default border is none
-        enabledBorder: UnderlineInputBorder(
-          borderSide: BorderSide(color: Colors.grey[200]!, width: 1.5),
+    return Obx(() {
+      return TextField(
+        controller: _emailController,
+        keyboardType: TextInputType.emailAddress,
+        onChanged: _onChanged,
+        decoration: InputDecoration(
+          labelText: Texts.emailLabel,
+          labelStyle: TextStyle(color: Colors.grey),
+          border: InputBorder.none,
+          enabledBorder: UnderlineInputBorder(
+            borderSide: BorderSide(color: Colors.grey[200]!, width: 1.5),
+          ),
+          focusedBorder: UnderlineInputBorder(
+            borderSide: BorderSide(color: Colors.grey[200]!, width: 1.5),
+          ),
+          suffixIcon: _containsAtSymbol.value
+              ? Icon(
+            Icons.check_circle,
+            color: Colors.black,
+          )
+              : null,
         ),
-        focusedBorder: UnderlineInputBorder(
-          borderSide: BorderSide(color: Colors.grey[200]!, width: 1.5),
-        ),
-        suffixIcon: _containsAtSymbol
-            ? Icon(
-          Icons.check_circle,
-          color: Colors.black,
-        )
-            : null,
-      ),
-    );
+      );
+    });
   }
 }
-
 
 class PasswordField extends StatefulWidget {
   final void Function(bool isValid) onChanged;
@@ -198,15 +218,13 @@ class PasswordField extends StatefulWidget {
 }
 
 class _PasswordFieldState extends State<PasswordField> {
-
-
   @override
   Widget build(BuildContext context) {
     return TextField(
+      controller: _passwordController,
       onChanged: (text) {
         bool isValid = text.isNotEmpty;
         widget.onChanged(isValid);
-
       },
       decoration: InputDecoration(
         labelText: Texts.passwordLabel,
@@ -218,7 +236,6 @@ class _PasswordFieldState extends State<PasswordField> {
         focusedBorder: UnderlineInputBorder(
           borderSide: BorderSide(color: Colors.grey[200]!, width: 1.5),
         ),
-
       ),
     );
   }

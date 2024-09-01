@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:plantist/constants/CommonVariables.dart';
 
 import '../constants/Texts.dart';
@@ -70,7 +71,7 @@ class SplashScreen extends StatelessWidget {
                       backgroundColor: Colors.transparent,
 
                     ),
-                    
+
                   ),
 
                   SizedBox(height: CommonVariables.height*0.03),

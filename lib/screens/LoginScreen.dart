@@ -1,6 +1,12 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:plantist/constants/CommonVariables.dart';
+import 'package:plantist/constants/LoginStatus.dart';
+import 'package:plantist/viewmodels/LoginViewModel.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../constants/EncryptionUtils.dart';
 import '../constants/Texts.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -8,25 +14,59 @@ class LoginScreen extends StatefulWidget {
   _LoginScreenState createState() => _LoginScreenState();
 }
 
+final TextEditingController _emailController = TextEditingController();
+final TextEditingController _passwordController = TextEditingController();
+final LoginViewModel _loginController = Get.put(LoginViewModel());
+
 class _LoginScreenState extends State<LoginScreen> {
-  bool _isEmailValid = false;
-  bool _isPasswordValid = false;
+  final AuthService _authService = AuthService();
+  var _isEmailValid = false.obs;
+  var _isPasswordValid = false.obs;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedCredentials();
+  }
+
+  Future<void> _loadSavedCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final encryptedEmail = prefs.getString('email');
+    final encryptedPassword = prefs.getString('password');
+
+    if (encryptedEmail != null && encryptedPassword != null) {
+      try {
+        final email = EncryptionUtils.decrypt(encryptedEmail);
+        final password = EncryptionUtils.decrypt(encryptedPassword);
+        _emailController.text = email;
+        _passwordController.text = password;
+        _isEmailValid.value = true;
+        _isPasswordValid.value = true;
+        print('Decrypted Email: $email');
+      } catch (e) {
+        print('Decryption error: $e');
+      }
+
+      // Check biometric authentication support and trigger if supported
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _authService.authenticateWithBiometrics(context);
+      });
+    }
+  }
 
   void _onEmailChanged(bool isValid) {
-    setState(() {
-      _isEmailValid = isValid;
-    });
+    _isEmailValid.value = isValid;
   }
 
   void _onPasswordChanged(bool isValid) {
-    setState(() {
-      _isPasswordValid = isValid;
-    });
+    _isPasswordValid.value = isValid;
   }
 
   @override
   Widget build(BuildContext context) {
     CommonVariables.init(context);
+
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
@@ -77,28 +117,45 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             SizedBox(height: CommonVariables.height * 0.025),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: (_isEmailValid && _isPasswordValid) ? () {} : null,
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(vertical: CommonVariables.height * 0.03),
-                  backgroundColor: (_isEmailValid && _isPasswordValid)
-                      ? Colors.indigo[900]
-                      : Colors.grey[400],
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24.0),
-                  ),
-                ),
-                child: Text(
-                  Texts.signInButton,
-                  style: TextStyle(
-                    fontSize: CommonVariables.width * 0.05,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
+            Obx(() {
+              if (_loginController.status.value == LoginStatus.loading) {
+                return Center(child: CircularProgressIndicator());
+              } else if (_loginController.status.value == LoginStatus.failure) {
+                return Text(
+                  'Error: ${_loginController.errorMessage.value}',
+                  style: TextStyle(color: Colors.red),
+                );
+              } else {
+                return SizedBox(
+                  width: double.infinity,
+                  child: Obx(() {
+                    return ElevatedButton(
+                      onPressed: (_isEmailValid.value && _isPasswordValid.value)
+                          ? () {
+                        _loginController.signIn(_emailController.text, _passwordController.text);
+                      }
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(vertical: CommonVariables.height * 0.03),
+                        backgroundColor: (_isEmailValid.value && _isPasswordValid.value)
+                            ? Colors.indigo[900]
+                            : Colors.grey[400],
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24.0),
+                        ),
+                      ),
+                      child: Text(
+                        Texts.signInButton,
+                        style: TextStyle(
+                          fontSize: CommonVariables.width * 0.05,
+                          color: Colors.white,
+                        ),
+                      ),
+                    );
+                  }),
+                );
+              }
+            }),
             Spacer(),
             Center(
               child: RichText(
@@ -149,104 +206,111 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-
-class EmailField extends StatefulWidget {
+class EmailField extends StatelessWidget {
   final void Function(bool isValid) onChanged;
 
   EmailField({required this.onChanged});
 
   @override
-  _EmailFieldState createState() => _EmailFieldState();
-}
+  Widget build(BuildContext context) {
+    var _containsAtSymbol = false.obs;
 
-class _EmailFieldState extends State<EmailField> {
-  bool _containsAtSymbol = false;
-
-  void _onChanged(String text) {
-    bool isValid = text.contains('@') && text.contains('.');
-    widget.onChanged(isValid);
-    setState(() {
-      _containsAtSymbol = isValid;
+    return Obx(() {
+      return TextField(
+        controller: _emailController,
+        keyboardType: TextInputType.emailAddress,
+        onChanged: (text) {
+          bool isValid = text.contains('@') && text.contains('.');
+          onChanged(isValid);
+          _containsAtSymbol.value = isValid;
+        },
+        decoration: InputDecoration(
+          labelText: Texts.emailLabel,
+          labelStyle: TextStyle(color: Colors.grey),
+          border: InputBorder.none,
+          enabledBorder: UnderlineInputBorder(
+            borderSide: BorderSide(color: Colors.grey[200]!, width: 1.5),
+          ),
+          focusedBorder: UnderlineInputBorder(
+            borderSide: BorderSide(color: Colors.grey[200]!, width: 1.5),
+          ),
+          suffixIcon: _containsAtSymbol.value
+              ? Icon(
+            Icons.check_circle,
+            color: Colors.black,
+          )
+              : null,
+        ),
+      );
     });
   }
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      keyboardType: TextInputType.emailAddress,
-      onChanged: _onChanged,
-      decoration: InputDecoration(
-        labelText: Texts.emailLabel,
-        labelStyle: TextStyle(color: Colors.grey),
-        border: InputBorder.none, // Default border is none
-        enabledBorder: UnderlineInputBorder(
-          borderSide: BorderSide(color: Colors.grey[200]!, width: 1.5),
-        ),
-        focusedBorder: UnderlineInputBorder(
-          borderSide: BorderSide(color: Colors.grey[200]!, width: 1.5),
-        ),
-        suffixIcon: _containsAtSymbol
-            ? Icon(
-          Icons.check_circle,
-          color: Colors.black,
-        )
-            : null,
-      ),
-    );
-  }
 }
 
-
-class PasswordField extends StatefulWidget {
+class PasswordField extends StatelessWidget {
   final void Function(bool isValid) onChanged;
 
   PasswordField({required this.onChanged});
 
   @override
-  _PasswordFieldState createState() => _PasswordFieldState();
-}
+  Widget build(BuildContext context) {
+    var _obscureText = true.obs;
+    var _hasText = false.obs;
 
-class _PasswordFieldState extends State<PasswordField> {
-  bool _obscureText = true;
-  bool _hasText = false;
-
-  void _togglePasswordVisibility() {
-    setState(() {
-      _obscureText = !_obscureText;
+    return Obx(() {
+      return TextField(
+        controller: _passwordController,
+        onChanged: (text) {
+          bool isValid = text.isNotEmpty;
+          onChanged(isValid);
+          _hasText.value = isValid;
+        },
+        decoration: InputDecoration(
+          labelText: Texts.passwordLabel,
+          labelStyle: TextStyle(color: Colors.grey),
+          border: InputBorder.none,
+          enabledBorder: UnderlineInputBorder(
+            borderSide: BorderSide(color: Colors.grey[200]!, width: 1.5),
+          ),
+          focusedBorder: UnderlineInputBorder(
+            borderSide: BorderSide(color: Colors.grey[200]!, width: 1.5),
+          ),
+          suffixIcon: _hasText.value
+              ? IconButton(
+            icon: Icon(
+              _obscureText.value ? Icons.visibility_off : Icons.visibility,
+              color: Colors.grey,
+            ),
+            onPressed: () {
+              _obscureText.value = !_obscureText.value;
+            },
+          )
+              : null,
+        ),
+        obscureText: _obscureText.value,
+      );
     });
   }
+}
 
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      onChanged: (text) {
-        bool isValid = text.isNotEmpty;
-        widget.onChanged(isValid);
-        setState(() {
-          _hasText = isValid;
-        });
-      },
-      decoration: InputDecoration(
-        labelText: Texts.passwordLabel,
-        labelStyle: TextStyle(color: Colors.grey),
-        border: InputBorder.none,
-        enabledBorder: UnderlineInputBorder(
-          borderSide: BorderSide(color: Colors.grey[200]!, width: 1.5),
-        ),
-        focusedBorder: UnderlineInputBorder(
-          borderSide: BorderSide(color: Colors.grey[200]!, width: 1.5),
-        ),
-        suffixIcon: _hasText
-            ? IconButton(
-          icon: Icon(
-            _obscureText ? Icons.visibility_off : Icons.visibility,
-            color: Colors.grey,
-          ),
-          onPressed: _togglePasswordVisibility,
-        )
-            : null,
-      ),
-      obscureText: _obscureText,
-    );
+class AuthService {
+  final LocalAuthentication _localAuth = LocalAuthentication();
+
+  Future<void> authenticateWithBiometrics(BuildContext context) async {
+    bool canCheckBiometrics = await _localAuth.canCheckBiometrics;
+    bool isBiometricSupported = await _localAuth.isDeviceSupported();
+
+    if (canCheckBiometrics && isBiometricSupported) {
+      try {
+        bool authenticated = await _localAuth.authenticate(
+          localizedReason: 'Please authenticate to log in',
+        );
+
+        if (authenticated) {
+          _loginController.signIn(_emailController.text, _passwordController.text);
+        }
+      } catch (e) {
+        print("Biometric authentication error: $e");
+      }
+    }
   }
 }

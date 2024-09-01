@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "968152324264",
+    "firebase_url": "https://plantist-1e545-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "plantist-1e545",
+    "storage_bucket": "plantist-1e545.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:968152324264:android:6f5e575082a8bc123b8a9d",
+        "android_client_info": {
+          "package_name": "com.doguhan.plantist"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCISxPAt0AxtqhGRf847Y6LdGg2qgtXrvE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
