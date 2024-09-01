@@ -1,16 +1,11 @@
-# plantist
+General technologies I used in the application I prepared for the study case
+- GetX
+- Firebase Authentication
+- Firebase Storage
+- Firestore Database
+- Biometric Authentication
 
-Start your productive life now !
+  
 
-## Getting Started
+https://github.com/user-attachments/assets/e7f14c48-6f65-448f-896e-58708cbfd255
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
