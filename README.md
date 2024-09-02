@@ -5,7 +5,7 @@ General technologies I used in the application I prepared for the study case
 - Firestore Database
 - Biometric Authentication
 
-  
+Tested on Android device due to Windows computer 
 
 https://github.com/user-attachments/assets/e7f14c48-6f65-448f-896e-58708cbfd255
 
